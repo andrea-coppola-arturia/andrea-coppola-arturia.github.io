@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fast Parametric Matrices for Lossless Feedback Delay Networks: Companion Site</title>
+    <meta name="description" content="Audio examples and supplementary material for the DAFx-26 paper 'Fast Parametric Matrices for Lossless Feedback Delay Networks' by Andrea Coppola.">
+    <meta name="author" content="Andrea Coppola">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+
+    <header class="title-block">
+        <h1 class="paper-title">Fast Parametric Matrices for<br>Lossless Feedback Delay Networks</h1>
+
+        <p class="author">Andrea Coppola</p>
+        <p class="affiliation">
+            Arturia<br>
+            Montbonnot-Saint-Martin, France<br>
+            <a href="mailto:andrea.coppola@arturia.com">andrea.coppola@arturia.com</a>
+        </p>
+
+        <nav class="paper-links" aria-label="Paper resources">
+            <a href="#" aria-disabled="true" style="opacity:0.5;cursor:not-allowed;" onclick="return false;">Paper PDF</a>
+            <a href="#examples">Audio Examples</a>
+        </nav>
+    </header>
+
+    <section class="abstract" aria-labelledby="abs-h">
+        <h2 id="abs-h">Abstract</h2>
+        <p>This paper presents a framework for designing creative reverbs using parametric 
+        orthogonal feedback matrices on Feedback Delay Networks (FDNs) through recursive 
+        Kronecker products of 2D rotation and reflection matrices. By parameterizing each 
+        <i>2 &times; 2</i> kernel with a single angle, we construct a family of 
+        <i>2<sup>M</sup> &times; 2<sup>M</sup></i> orthogonal matrices that maintain 
+        losslessness while enabling continuous control over network topology. We then exploit 
+        their recursive definition to derive an efficient divide-and-conquer algorithm that 
+        computes the feedback operation with <i>O(N&nbsp;log<sub>2</sub>&nbsp;N)</i> time 
+        complexity, matching the Fast Walsh&ndash;Hadamard Transform while offering parametric 
+        flexibility. Strategic manipulation of individual kernel angles enables creative sound 
+        design applications. The framework offers FDN designers an expressive, real-time tunable 
+        parametric matrix, balancing computational efficiency with intuitive control for creative 
+        reverberation design.</p>
+    </section>
+
+    <section class="paper-section" id="overview">
+        <h2><span class="num">1.</span>Overview</h2>
+
+        <p class="body">The Kronecker Feedback Matrix is built recursively from 
+        <i>2 &times; 2</i> rotation and reflection kernels, indexed <i>&theta;<sub>1</sub></i> 
+        (innermost) through <i>&theta;<sub>M</sub></i> (outermost). Each kernel level controls 
+        a structurally distinct mixing operation: <i>&theta;<sub>M</sub></i> governs the coupling 
+        between the two stereo halves of the network, <i>&theta;<sub>1</sub></i> governs the 
+        even/odd partition, and intermediate kernels are used to modulate the matrix over time. 
+        We exploit this independence for three creative applications that act on different levels and can 
+        therefore be combined: <b>stereo cross-coupling</b> (on <i>&theta;<sub>M</sub></i>), 
+        <b>selective freeze via even/odd decoupling</b> (on <i>&theta;<sub>1</sub></i>) and 
+        <b>matrix modulation</b> (on <i>&theta;<sub>M&minus;1</sub></i>, one level inside the 
+        outermost). The companion audio examples below illustrate each of these configurations.</p>
+
+        <p class="body">Unless explictly stated, most audio examples are rendered through the same network: a 
+        <i>32 &times; 32</i> Feedback Delay Network with a Kronecker feedback matrix built from rotation kernels, rendered from 
+        a reference implementation of the design. (The modulation section, &sect;<a href="#group-mod">2.3</a>, 
+        uses a smaller decoupled network to make individual resonances more audible). Although the framework also admits reflection kernels (covered in 
+        the paper), the demonstrations here use rotation kernels only, for clarity. Delay lengths 
+        are coprime, ranging from approximately <i>20&nbsp;ms</i> to <i>200&nbsp;ms</i>. Unless 
+        explicitly stated, the outermost coupling angle <i>&theta;<sub>M</sub></i> is left at its 
+        fully coupled value (<i>100%</i>, <i>&theta;<sub>M</sub> = &pi;/4</i>); other angles default 
+        to the values used in the corresponding section. No damping filters or additional 
+        all-pass diffusion stages are applied, to keep the underlying matrix behaviour as transparent as possible.</p>
+
+    </section>
+
+    <section class="paper-section" id="examples">
+        <h2><span class="num">2.</span>Audio Examples</h2>
+
+        <p class="body">The following audio examples are 
+        organised into three groups corresponding to the three creative configurations: stereo 
+        cross-coupling (&sect;<a href="#group-stereo">2.1</a>), selective freeze 
+        (&sect;<a href="#group-freeze">2.2</a>) and modulation (&sect;<a href="#group-mod">2.3</a>). 
+        Each group is preceded by its <i>dry</i> source material, followed by the <i>wet</i> 
+        renderings produced by the Kronecker FDN under the parameter setting indicated in the 
+        caption. Wet renderings are <i>100% wet</i> (reverb output only, with the dry source 
+        supplied separately above each group). Headphone listening 
+        is recommended, particularly for the stereo examples.</p>
+
+        <details class="example-group" id="group-stereo">
+            <summary class="subsection"><span class="num">2.1.</span>Stereo Cross-Coupling</summary>
+
+            <p class="group-intro">Varying the outermost kernel angle <i>&theta;<sub>M</sub></i> 
+            from <i>0</i> to <i>&pi;/4</i> progressively introduces off-diagonal coupling blocks 
+            between the two stereo halves of the network. At <i>&theta;<sub>M</sub> = 0</i> the 
+            channels are independent; at <i>&theta;<sub>M</sub> = &pi;/4</i> the two halves are 
+            fully coupled and the network behaves as a single, maximally diffusive unified FDN. 
+            The examples below sweep through this continuum on a single piano note hard-panned to
+            the left, so the amount of energy spreading into the right channel directly visualises
+            the coupling. Percentages refer to position along the <i>[0, &pi;/4]</i> range.</p>
+
+            <p class="group-intro">Below each rendering we plot the inter-aural cross-correlation
+            (IACC) of the corresponding stereo impulse response over time, computed over a sliding
+            window. IACC measures the similarity between the left and right channels: values near
+            <i>1</i> indicate near-identical channels (a narrow, centred image), while values near
+            <i>0</i> indicate decorrelated channels (a wide, enveloping image). At <i>0%</i> coupling
+            the right channel is silent, so the IACC is undefined and the plot is left blank; for all
+            coupled settings the reverberant tail decorrelates toward a low steady-state value.</p>
+
+            <div class="source-row">
+                <div class="source-label">Dry source: piano note, hard-panned left</div>
+                <div class="source-desc">Single piano note, fully on the left channel. Used for examples&nbsp;01&ndash;06.</div>
+                <audio controls preload="none" src="audio/stereo/coupling_dry.wav"></audio>
+            </div>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">01</span>
+                    <span class="ex-title">Fully decoupled: 0% coupling (<i>&theta;<sub>M</sub> = 0</i>)</span>
+                </header>
+                <p class="ex-desc">Reference configuration: the two halves of the network are fully
+                independent. The reverb tail stays entirely on the left channel; the right channel
+                remains silent.</p>
+                <audio controls preload="none" src="audio/stereo/coupling_wet_000.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/coupling_iacc_000.png"
+                         alt="IACC over time at 0% coupling: blank, as the right channel is silent and IACC is undefined.">
+                    <figcaption><span class="label">Figure.</span> IACC over time at 0% coupling. The
+                    right channel is silent, so the IACC is undefined throughout.</figcaption>
+                </figure>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">02</span>
+                    <span class="ex-title">5% coupling (<i>&theta;<sub>M</sub> &approx; &pi;/80</i>)</span>
+                </header>
+                <p class="ex-desc">A small amount of cross-feedback has energy slowly leaking into the right channel.
+                    The note's reverb tail sweeps from the left channel into the right and back again.</p>
+                <audio controls preload="none" src="audio/stereo/coupling_wet_005.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/coupling_iacc_005.png"
+                         alt="IACC over time at 5% coupling.">
+                    <figcaption><span class="label">Figure.</span> IACC over time at 5% coupling.</figcaption>
+                </figure>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">03</span>
+                    <span class="ex-title">10% coupling (<i>&theta;<sub>M</sub> = &pi;/40</i>)</span>
+                </header>
+                <p class="ex-desc">More cross-feedback than example&nbsp;02: energy crosses into the right
+                channel sooner and the stereo image begins to fill in, while the original left-hand
+                placement of the note is still clearly heard.</p>
+                <audio controls preload="none" src="audio/stereo/coupling_wet_010.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/coupling_iacc_010.png"
+                         alt="IACC over time at 10% coupling.">
+                    <figcaption><span class="label">Figure.</span> IACC over time at 10% coupling.</figcaption>
+                </figure>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">04</span>
+                    <span class="ex-title">25% coupling (<i>&theta;<sub>M</sub> = &pi;/16</i>)</span>
+                </header>
+                <p class="ex-desc">Moderate coupling. Energy spreads across the panorama quickly after
+                onset, yet the early reflections remain correlated enough that the source direction is
+                still perceptible before the tail decorrelates.</p>
+                <audio controls preload="none" src="audio/stereo/coupling_wet_025.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/coupling_iacc_025.png"
+                         alt="IACC over time at 25% coupling.">
+                    <figcaption><span class="label">Figure.</span> IACC over time at 25% coupling.</figcaption>
+                </figure>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">05</span>
+                    <span class="ex-title">50% coupling (<i>&theta;<sub>M</sub> = &pi;/8</i>)</span>
+                </header>
+                <p class="ex-desc">Stronger cross-feedback: the energy leaks from left to right faster, but directionality is preserved. </p>
+                <audio controls preload="none" src="audio/stereo/coupling_wet_050.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/coupling_iacc_050.png"
+                         alt="IACC over time at 50% coupling.">
+                    <figcaption><span class="label">Figure.</span> IACC over time at 50% coupling.</figcaption>
+                </figure>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">06</span>
+                    <span class="ex-title">100% coupling: unified FDN (<i>&theta;<sub>M</sub> = &pi;/4</i>)</span>
+                </header>
+                <p class="ex-desc">The two halves are fully merged into a single, maximally diffusive
+                unified FDN. Diffusion is uniform across the stereo panorama.</p>
+                <audio controls preload="none" src="audio/stereo/coupling_wet_100.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/coupling_iacc_100.png"
+                         alt="IACC over time at 100% coupling.">
+                    <figcaption><span class="label">Figure.</span> IACC over time at 100% coupling.</figcaption>
+                </figure>
+            </article>
+        </details>
+
+        <details class="example-group" id="group-freeze">
+            <summary class="subsection"><span class="num">2.2.</span>Selective Freeze via Even/Odd Decoupling</summary>
+
+            <p class="group-intro">Setting <i>&theta;<sub>1</sub> = 0</i> decouples the network 
+            into even- and odd-indexed delay lines. A <i>freeze</i> operation can then be applied 
+            independently to either subset by zeroing the input mixing into the frozen subset and 
+            setting its absorption coefficients to unity, sustaining the 
+            current state indefinitely while the other half continues to process new input. The 
+            first three examples isolate the mechanism. The fourth is a musical showcase.</p>
+
+            <figure class="paper-figure">
+                <img src="images/matrix_decoupling.png"
+                     alt="8x8 Kronecker feedback matrix Psi_3 with theta_1 = 0, showing the even/odd decoupling pattern.">
+                <figcaption><span class="label">Figure.</span> Feedback matrix
+                <i>&Psi;<sub>3</sub></i> for <i>N&nbsp;=&nbsp;8</i> with rotation kernels at
+                <i>&theta;<sub>1</sub>&nbsp;=&nbsp;0</i>, <i>&theta;<sub>2</sub>&nbsp;=&nbsp;&pi;/4</i>,
+                and <i>&theta;<sub>3</sub>&nbsp;=&nbsp;&pi;/8</i>. Setting
+                <i>&theta;<sub>1</sub>&nbsp;=&nbsp;0</i> decouples the network into even- and
+                odd-indexed delay lines, while <i>&theta;<sub>3</sub>&nbsp;=&nbsp;&pi;/8</i>
+                retains a partial stereo coupling between the two halves, showing that the even/odd
+                freeze and stereo cross-coupling configurations are compatible and can be combined
+                within a single matrix. The matrix shown here is illustrative; the actual examples
+                below use a larger <i>32&nbsp;&times;&nbsp;32</i> network.</figcaption>
+            </figure>
+
+            <div class="source-row">
+                <div class="source-label">Dry source: three notes</div>
+                <div class="source-desc">Three simple notes used in examples&nbsp;07&ndash;09.</div>
+                <audio controls preload="none" src="audio/freeze/freeze_simple_dry.wav"></audio>
+            </div>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">REF</span>
+                    <span class="ex-title">Wet rendering with no freeze</span>
+                </header>
+                <p class="ex-desc">The same dry source rendered through the FDN with no freeze engaged. 
+                Baseline reference for the three freeze variations below.</p>
+                <audio controls preload="none" src="audio/freeze/freeze_simple_no_freeze.wav"></audio>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">07</span>
+                    <span class="ex-title">Freeze Even on the first note</span>
+                </header>
+                <p class="ex-desc">The even-indexed half of the network is frozen on the first note. 
+                The odd half keeps diffusing freely so the remaining notes ring out naturally over 
+                the held tone.</p>
+                <audio controls preload="none" src="audio/freeze/freeze_simple_even.wav"></audio>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">08</span>
+                    <span class="ex-title">Freeze Odd on the first note</span>
+                </header>
+                <p class="ex-desc">Symmetric counterpart of example&nbsp;07. The first note is captured 
+                on the odd half this time while the even half handles the rest.
+                Similar effect to the previous example except that given the different delay times, the reverb quality is slightly different. </p>
+                <audio controls preload="none" src="audio/freeze/freeze_simple_odd.wav"></audio>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">09</span>
+                    <span class="ex-title">Both halves used: two notes held in parallel</span>
+                </header>
+                <p class="ex-desc">Both halves are now in use: the even half freezes the first note 
+                and the odd half freezes the second one. The two captured notes sustain together as 
+                a held interval while the network has no remaining free subsections to process new input.</p>
+                <audio controls preload="none" src="audio/freeze/freeze_simple_both.wav"></audio>
+            </article>
+
+            <div class="source-row">
+                <div class="source-label">Dry source: music loop</div>
+                <div class="source-desc">Evolving music loop used in example&nbsp;10. (Many thanks to Quentin Feuillard for the music example). </div>
+                <audio controls preload="none" src="audio/freeze/dry_padfromloop.wav"></audio>
+            </div>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">10</span>
+                    <span class="ex-title">Pad-from-loop showcase</span>
+                </header>
+                <p class="ex-desc">A musical application of selective freeze. Two freezes operate in
+                parallel and capture short pulses at different points throughout the music loop. Each
+                pulse stores a snapshot of half of the network at that moment. Alternating between the
+                even and odd halves lets us assemble pad sounds from those captured fragments and swap
+                in different parts of the source as the loop evolves.</p>
+                <audio controls preload="none" src="audio/freeze/padfromloop.wav"></audio>
+                <figure class="paper-figure wide">
+                    <img src="images/padfromloop_freeze_timeline.png"
+                         alt="Waveform of the dry music loop with odd and even freeze regions shaded over time.">
+                    <figcaption><span class="label">Figure.</span> Freeze timeline for the pad-from-loop
+                    showcase. The waveform of the dry source is shown with color regions marking the
+                    intervals during which the odd (top) and even (bottom) halves of
+                    the network are frozen. Both halves release simultaneously at <i>t</i>&nbsp;=&nbsp;23&nbsp;s.</figcaption>
+                </figure>
+            </article>
+        </details>
+
+        <details class="example-group" id="group-mod">
+            <summary class="subsection"><span class="num">2.3.</span>Modulation</summary>
+
+            <p class="group-intro">To isolate the perceptual effect of matrix modulation, the examples 
+            in this section use a smaller <i>16 &times; 16</i> network with the outermost angle set 
+            to <i>&theta;<sub>M</sub> = 0</i>, which decouples it into two independent 
+            <i>8 &times; 8</i> sub-networks (one per stereo side). This configuration thins the modal 
+            density and makes individual resonances more clearly audible than they would be in the 
+            32-channel network used elsewhere. Modulation is applied to the kernel angle 
+            <i>&theta;<sub>M&minus;1</sub></i> (one level inside the outermost; here 
+            <i>M = log<sub>2</sub>&nbsp;N = 4</i>, so the modulated angle is <i>&theta;<sub>3</sub></i>). 
+            The angle follows a sinusoid centred on <i>&pi;/4</i>, with the stated depth as its amplitude: 
+            <i>&theta;<sub>M&minus;1</sub>(t) = &pi;/4 + depth &middot; sin(2&pi;&middot;rate&middot;t)</i>.
+            Matrix modulation decorrelates the modal response over time and softens the metallic ringing of the static configuration;
+            unlike delay-line modulation, it affects only the routing coefficients between delay lines and substantially 
+            reduces the chorus-like artefacts associated with the former. The three examples share the 
+            same dry source and present three modulation regimes: off, subtle, and aggressive.</p>
+
+            <div class="source-row">
+                <div class="source-label">Dry source: two chords (square-wave oscillator)</div>
+                <div class="source-desc">Two sustained chords played on a virtual-analog square-wave 
+                oscillator. The harmonically rich tone excites the network's modes strongly, surfacing
+                the metallic resonances under examination. Used for examples&nbsp;11&ndash;13.</div>
+                <audio controls preload="none" src="audio/modulation/dry_modulation.wav"></audio>
+            </div>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">11</span>
+                    <span class="ex-title">Modulation off: baseline coloration</span>
+                </header>
+                <p class="ex-desc">Static feedback matrix, no modulation applied. The fixed modal 
+                resonances of the network are clearly audible as metallic ringing in the chord tails.
+                This is the baseline against which the next two examples are compared.</p>
+                <audio controls preload="none" src="audio/modulation/wet_no_modulation.wav"></audio>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">12</span>
+                    <span class="ex-title">Subtle modulation: recommended range</span>
+                </header>
+                <p class="ex-desc">Rate <i>0.2&nbsp;Hz</i>, depth <i>0.2&thinsp;&pi;</i>. Light modulation:
+                the metallic ringing of the static configuration is audibly smeared. </p>
+                <audio controls preload="none" src="audio/modulation/wet_light_modulation.wav"></audio>
+            </article>
+
+            <article class="example">
+                <header class="example-head">
+                    <span class="ex-num">13</span>
+                    <span class="ex-title">Aggressive modulation: upper bound</span>
+                </header>
+                <p class="ex-desc">Rate <i>2&nbsp;Hz</i>, depth <i>&pi;</i> (the full angular range). 
+                At this extreme the modulation is clearly audible as a discrete artefact in its own 
+                right rather than transparent diffusion. Shown to illustrate the upper end of the 
+                operating range.</p>
+                <audio controls preload="none" src="audio/modulation/wet_heavy_modulation.wav"></audio>
+            </article>
+        </details>
+    </section>
+
+    <footer class="site-footer">
+        <p class="copyright">&copy; 2026 Arturia. All rights reserved.</p>
+    </footer>
+
+</div>
+
+<script>
+// Replace audio elements whose source fails to load with a neutral placeholder
+// so the page reads cleanly before the WAV files have been uploaded.
+(function () {
+    document.querySelectorAll('audio').forEach(function (el) {
+        el.addEventListener('error', function () {
+            var p = document.createElement('div');
+            p.className = 'placeholder-audio';
+            p.textContent = 'audio coming soon — ' + (el.getAttribute('src') || '').split('/').pop();
+            el.replaceWith(p);
+        }, true);
+    });
+})();
+</script>
+
+</body>
+</html>
